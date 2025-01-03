@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="jumbotron bg-light p-5 rounded mb-4">
+    <h1>Welcome to PAW SOCIAL</h1>
+    <p class="lead">Connect with pet lovers, find services, and share your pet journey!</p>
+    {% if not user.is_authenticated %}
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Join Now</a>
+    {% endif %}
+</div>
+
+<div class="row">
+    <!-- Events Section -->
+    <div class="col-md-6">
+        <h2>Latest Events</h2>
+        {% if events %}
+            {% for event in events %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text">
+                            <i class="fas fa-calendar"></i> {{ event.date|date:"F d, Y" }}<br>
+                            <i class="fas fa-map-marker-alt"></i> {{ event.location }}
+                        </p>
+                        <a href="{% url 'events' %}" class="btn btn-primary">Learn More</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No upcoming events.</p>
+        {% endif %}
+    </div>
+
+    <!-- Fundraisers Section -->
+    <div class="col-md-6">
+        <h2>Active Fundraisers</h2>
+        {% if fundraisers %}
+            {% for fundraiser in fundraisers %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ fundraiser.title }}</h5>
+                        <div class="progress mb-2">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {% widthratio fundraiser.collected_amount fundraiser.target_amount 100 %}%">
+                            </div>
+                        </div>
+                        <p class="card-text">
+                            Raised: ${{ fundraiser.collected_amount }} of ${{ fundraiser.target_amount }}
+                        </p>
+                        <a href="{% url 'fundraisers' %}" class="btn btn-primary">Donate Now</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No active fundraisers.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Our Features</h2>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-paw fa-3x mb-3"></i>
+                <h5 class="card-title">Connect with Pets</h5>
+                <p class="card-text">Find and connect with pets in your area.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                <h5 class="card-title">Pet Events</h5>
+                <p class="card-text">Join pet-friendly events and meetups.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-heart fa-3x mb-3"></i>
+                <h5 class="card-title">Help Pets in Need</h5>
+                <p class="card-text">Support fundraisers for pets requiring assistance.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Profile - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="profile-header">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center">
+                <img src="https://via.placeholder.com/150" class="rounded-circle mb-3" alt="Profile Picture">
+            </div>
+            <div class="col-md-9">
+                <h2>{{ user.username }}'s Profile</h2>
+                <p class="text-muted">{{ user.account_type|title }} User</p>
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong>Followers:</strong> {{ user.followers_count }}</p>
+                    </div>
+                    <div class="col-6">
+                        <p><strong>Following:</strong> {{ user.following_count }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Update Profile</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">
+                                    {{ field.label }}
+                                </label>
+                                {{ field.errors }}
+                                {{ field }}
+                            </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title">Contact Information</h3>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Phone:</strong> {{ user.phone|default:"Not provided" }}</p>
+                    <p><strong>Location:</strong> {{ user.city|default:"Not provided" }}</p>
+                </div>
+            </div>
+
+            {% if user.account_type == 'professional' %}
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="card-title">Business Information</h3>
+                        {% if business %}
+                            <p><strong>Business Name:</strong> {{ business.name }}</p>
+                            <p><strong>Rating:</strong> {{ business.rating }}/5</p>
+                        {% else %}
+                            <p>No business information available.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

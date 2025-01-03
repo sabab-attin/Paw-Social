@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - PAW SOCIAL{% endblock %}
+
+{% block content %}
+{% if not user.is_authenticated %}
+    <div class="jumbotron bg-light p-5 rounded mb-4">
+        <h1>Welcome to PAW SOCIAL</h1>
+        <p class="lead">Connect with pet lovers, find services, and share your pet journey!</p>
+        <a href="{% url 'register' %}" class="btn btn-primary btn-lg">Join Now</a>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Our Features</h2>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-paw fa-3x mb-3"></i>
+                    <h5 class="card-title">Connect with Pets</h5>
+                    <p class="card-text">Find and connect with pets in your area.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-calendar-alt fa-3x mb-3"></i>
+                    <h5 class="card-title">Pet Events</h5>
+                    <p class="card-text">Join pet-friendly events and meetups.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-heart fa-3x mb-3"></i>
+                    <h5 class="card-title">Help Pets in Need</h5>
+                    <p class="card-text">Support fundraisers for pets requiring assistance.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% if user.is_authenticated %}
+    <div class="container">
+        <div class="row">
+            <!-- Left Sidebar -->
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <img src="{{ user.get_profile_picture }}" class="rounded-circle mb-2" width="80" height="80" alt="Profile Picture">
+                            <h5 class="mb-0">{{ user.get_full_name|default:user.username }}</h5>
+                            <p class="text-muted small mb-0">{{ user.get_account_type_display }}</p>
+                            {% if user.professional_type %}
+                                <span class="badge bg-info">{{ user.get_professional_type_display }}</span>
+                            {% endif %}
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-around text-center">
+                            <div>
+                                <h6 class="mb-0">{{ user.followers_count }}</h6>
+                                <small class="text-muted">Followers</small>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">{{ user.following_count }}</h6>
+                                <small class="text-muted">Following</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="list-group mb-4">
+                    <a href="{% url 'user_profile' user.username %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user me-2"></i> Profile
+                    </a>
+                    <a href="{% url 'pets' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-paw me-2"></i> My Pets
+                    </a>
+                    <a href="{% url 'events' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar me-2"></i> Events
+                    </a>
+                    <a href="{% url 'marketplace' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-shopping-cart me-2"></i> Marketplace
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Feed -->
+            <div class="col-md-6">
+                <!-- Create Post -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ form.content }}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="btn-group">
+                                    <label class="btn btn-outline-secondary" for="{{ form.image.id_for_label }}">
+                                        <i class="fas fa-image me-1"></i> Add Photo
+                                    </label>
+                                    {{ form.image }}
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-1"></i> Post
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Posts Feed -->
+                {% for post in posts %}
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center">
+                                    <a href="{% url 'user_profile' post.user.username %}" class="text-decoration-none">
+                                        <img src="{{ post.user.get_profile_picture }}" 
+                                             class="rounded-circle me-2" 
+                                             width="40" height="40" 
+                                             alt="{{ post.user.username }}'s profile">
+                                    </a>
+                                    <div>
+                                        <a href="{% url 'user_profile' post.user.username %}" class="text-decoration-none text-dark">
+                                            <h6 class="mb-0">{{ post.user.username }}</h6>
+                                        </a>
+                                        <small class="text-muted">{{ post.created_at|timesince }} ago</small>
+                                    </div>
+                                </div>
+                                {% if user == post.user %}
+                                    <div class="dropdown">
+                                        <button class="btn btn-link text-dark p-0" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <form action="{% url 'delete_post' post.id %}" method="post" 
+                                                      onsubmit="return confirm('Are you sure you want to delete this post?');">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="fas fa-trash-alt me-2"></i>Delete Post
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <p class="card-text">{{ post.content }}</p>
+                            {% if post.image %}
+                                <img src="{{ post.image.url }}" class="img-fluid rounded mb-3" alt="Post image">
+                            {% endif %}
+
+                            <div class="d-flex gap-2">
+                                <form method="post" action="{% url 'like_post' post.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if request.user in post.likes.all %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                        <i class="fas fa-thumbs-up"></i> {{ post.likes.count }}
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'dislike_post' post.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm {% if request.user in post.dislikes.all %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                        <i class="fas fa-thumbs-down"></i> {{ post.dislikes.count }}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <p class="text-muted mb-0">No posts to show yet. Be the first to post!</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="col-md-3">
+                {% if user.professional_type == 'business' and user.business_type == 'groomer' %}
+                    <!-- Services Section -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Add Service</h5>
+                            <form method="post" action="{% url 'add_service' %}">
+                                {% csrf_token %}
+                                {{ service_form.as_p }}
+                                <button type="submit" class="btn btn-primary w-100">Add Service</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {% if services %}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">My Services</h5>
+                                {% for service in services %}
+                                    <div class="mb-3">
+                                        <h6>{{ service.title }}</h6>
+                                        <p class="small mb-1">{{ service.description }}</p>
+                                        <p class="text-primary mb-0">${{ service.price }}</p>
+                                    </div>
+                                    {% if not forloop.last %}<hr>{% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    #id_content {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+        min-height: 100px;
+    }
+    #id_image {
+        display: none;
+    }
+    .post-image-preview {
+        max-height: 300px;
+        object-fit: cover;
+    }
+    .dropdown-item {
+        cursor: pointer;
+    }
+    .btn-link {
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap dropdowns
+        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
+        var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+            return new bootstrap.Dropdown(dropdownToggleEl)
+        });
+
+        // Preview image before upload
+        const imageInput = document.querySelector('#id_image');
+        if (imageInput) {
+            imageInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const label = this.previousElementSibling;
+                    label.innerHTML = '<i class="fas fa-check me-1"></i> Photo Selected';
+                    label.classList.remove('btn-outline-secondary');
+                    label.classList.add('btn-success');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

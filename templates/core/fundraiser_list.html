@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Fundraisers - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2>Active Fundraisers</h2>
+        {% if fundraisers %}
+            {% for fundraiser in fundraisers %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title">{{ fundraiser.title }}</h3>
+                        
+                        {% if fundraiser.description %}
+                            <p class="mb-3">{{ fundraiser.description }}</p>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <div class="progress" style="height: 20px;">
+                                {% with percentage=fundraiser.get_progress_percentage %}
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {% if percentage > 0 %}{{ percentage|floatformat:1 }}{% else %}0{% endif %}%;"
+                                     aria-valuenow="{{ percentage|floatformat:1 }}"
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ percentage|floatformat:1 }}%
+                                </div>
+                                {% endwith %}
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <span>Raised: ${{ fundraiser.collected_amount|floatformat:2 }}</span>
+                                <span>Goal: ${{ fundraiser.target_amount|floatformat:2 }}</span>
+                            </div>
+                        </div>
+
+                        <p>
+                            <strong>For:</strong> {{ fundraiser.beneficiary.name }} ({{ fundraiser.beneficiary.get_species_display }})<br>
+                            <strong>Created by:</strong> {{ fundraiser.created_by.username }}
+                        </p>
+
+                        <!-- Donation Form -->
+                        <form method="post" action="{% url 'donate' fundraiser.id %}" class="mt-3">
+                            {% csrf_token %}
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="amount" class="form-control" placeholder="Enter amount" 
+                                       step="0.01" min="0.01" required>
+                                <button type="submit" class="btn btn-primary">Donate</button>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="message" class="form-control" placeholder="Add a message (optional)" rows="2"></textarea>
+                            </div>
+                        </form>
+
+                        {% if fundraiser.shelter %}
+                            <div class="mt-3">
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>Verified by {{ fundraiser.shelter.business.name }}
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No active fundraisers at the moment.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Start a Fundraiser Section -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Start a Fundraiser</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="alert alert-danger mt-1">{{ field.errors }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-plus-circle me-1"></i>Create Fundraiser
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.progress {
+    height: 25px !important;
+    border-radius: 15px;
+    background-color: #e9ecef;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+.progress-bar {
+    transition: width 0.6s ease;
+    min-width: 2%;
+    font-weight: 500;
+    font-size: 0.9rem;
+    line-height: 25px;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+}
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+}
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0,0,0,0.125);
+}
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+}
+.btn-primary {
+    padding: 0.5rem 1.5rem;
+}
+.input-group-text {
+    background-color: #f8f9fa;
+    font-weight: 500;
+}
+</style>
+{% endblock %}

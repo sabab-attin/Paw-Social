@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h3>My Orders</h3>
+            {% for order in buyer_orders %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5>{{ order.product.product_name }}</h5>
+                        <p>Quantity: {{ order.quantity }}</p>
+                        <p>Total: ৳{{ order.quantity|multiply:order.product.price }}</p>
+                        <p>Status: {{ order.get_status_display }}</p>
+                        <small class="text-muted">Ordered {{ order.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="col-md-6">
+            <h3>Orders Received</h3>
+            {% for order in seller_orders %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5>{{ order.product.product_name }}</h5>
+                        <p>Buyer: {{ order.buyer.username }}</p>
+                        <p>Quantity: {{ order.quantity }}</p>
+                        <p>Contact: {{ order.contact_number }}</p>
+                        <p>Delivery Address: {{ order.delivery_address }}</p>
+                        <p>Status: {{ order.get_status_display }}</p>
+                        <small class="text-muted">Ordered {{ order.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

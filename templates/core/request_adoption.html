@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Request Adoption - {{ pet.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Request to Adopt {{ pet.name }}</h4>
+                    <a href="{% url 'available_adoptions' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Back to Available Pets
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <img src="{{ pet.get_pet_picture }}" class="img-fluid rounded" alt="{{ pet.name }}">
+                        </div>
+                        <div class="col-md-8">
+                            <h5>Pet Details</h5>
+                            <p class="mb-1"><strong>Species:</strong> {{ pet.get_species_display }}</p>
+                            <p class="mb-1"><strong>Breed:</strong> {{ pet.breed }}</p>
+                            <p class="mb-1"><strong>Age:</strong> {{ pet.age }} years</p>
+                            <p class="mb-1"><strong>Owner:</strong> {{ pet.owner.username }}</p>
+                            
+                            {% if pet.is_stray %}
+                                <span class="badge bg-warning text-dark">Stray</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="contactNumber" class="form-label">Your Contact Number *</label>
+                            <input type="tel" class="form-control" id="contactNumber" name="contact_number" required>
+                            <div class="form-text">This will be shared with the pet owner.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message to Owner *</label>
+                            <textarea class="form-control" id="message" name="message" rows="4" 
+                                      maxlength="500" required
+                                      placeholder="Tell the owner why you'd like to adopt this pet and how you plan to care for it. (Max 100 words)"></textarea>
+                            <div class="form-text">
+                                <span id="wordCount">0</span>/100 words
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-heart me-1"></i>Send Adoption Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('message').addEventListener('input', function() {
+    const words = this.value.trim().split(/\s+/).length;
+    const wordCount = this.value.trim() === '' ? 0 : words;
+    document.getElementById('wordCount').textContent = wordCount;
+    
+    if (wordCount > 100) {
+        this.value = this.value.split(/\s+/).slice(0, 100).join(' ');
+    }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const message = document.getElementById('message').value.trim();
+    const words = message === '' ? 0 : message.split(/\s+/).length;
+    
+    if (words > 100) {
+        e.preventDefault();
+        alert('Please limit your message to 100 words.');
+    }
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.form-text {
+    color: #6c757d;
+    font-size: 0.875em;
+}
+textarea {
+    resize: vertical;
+}
+</style>
+{% endblock %}

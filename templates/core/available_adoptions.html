@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Pets Available for Adoption - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Filters</h4>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        <div class="mb-3">
+                            <label class="form-label">Species</label>
+                            <div class="d-grid">
+                                <a href="{% url 'available_adoptions' %}" 
+                                   class="btn btn-outline-primary mb-2 {% if not selected_species %}active{% endif %}">
+                                    <i class="fas fa-paw me-1"></i>All Pets
+                                </a>
+                                {% for value, label in species_choices %}
+                                    <a href="?species={{ value }}" 
+                                       class="btn btn-outline-primary mb-2 {% if selected_species == value %}active{% endif %}">
+                                        <i class="fas fa-{% if value == 'dog' %}dog{% elif value == 'cat' %}cat{% elif value == 'bird' %}crow{% else %}paw{% endif %} me-1"></i>
+                                        {{ label }}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pets Grid -->
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">Pets Available for Adoption</h2>
+                <div class="text-muted">
+                    {{ pets|length }} pet{{ pets|length|pluralize }} available
+                </div>
+            </div>
+
+            <div class="row">
+                {% if pets %}
+                    {% for pet in pets %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100">
+                                <img src="{{ pet.get_pet_picture }}" class="card-img-top" 
+                                     alt="{{ pet.name }}" style="height: 200px; object-fit: cover;">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-1">{{ pet.name }}</h5>
+                                    <p class="text-muted small mb-2">
+                                        {{ pet.get_species_display }} • {{ pet.breed }} • {{ pet.age }} years
+                                    </p>
+                                    
+                                    <!-- Owner Info -->
+                                    <p class="mb-3">
+                                        <small class="text-muted">
+                                            Listed by: <a href="{% url 'user_profile' pet.owner.username %}" class="text-decoration-none">
+                                                {{ pet.owner.username }}
+                                            </a>
+                                        </small>
+                                    </p>
+
+                                    <!-- Status Badges -->
+                                    <div class="mb-3">
+                                        {% if pet.is_stray %}
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-exclamation-triangle me-1"></i>Stray
+                                            </span>
+                                        {% endif %}
+                                    </div>
+
+                                    <!-- Adopt Button -->
+                                    {% if user != pet.owner and pet.adoption_status == 'available' %}
+                                        <a href="{% url 'request_adoption' pet.id %}" class="btn btn-primary w-100">
+                                            <i class="fas fa-heart me-1"></i>Request Adoption
+                                        </a>
+                                    {% endif %}
+
+                                    <!-- Manage Adoption and Actions -->
+                                    {% if pet.adoption_status == 'available' %}
+                                        <a href="{% url 'manage_adoption_requests' pet.id %}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-list me-1"></i>Adoption Requests
+                                        </a>
+                                        <button type="button" class="btn btn-warning btn-sm" 
+                                                onclick="removeFromAdoption('{{ pet.id }}')">
+                                            <i class="fas fa-times me-1"></i>Remove from Adoption
+                                        </button>
+                                    {% else %}
+                                        <button type="button" class="btn btn-success btn-sm" 
+                                                onclick="makeAvailableForAdoption('{{ pet.id }}')">
+                                            <i class="fas fa-heart me-1"></i>Make Available for Adoption
+                                        </button>
+                                    {% endif %}
+
+                                    <button type="button" class="btn btn-danger btn-sm" 
+                                            onclick="deletePet('{{ pet.id }}')">
+                                        <i class="fas fa-trash me-1"></i>Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No pets available for adoption at the moment.
+                            {% if selected_species %}
+                                <a href="{% url 'available_adoptions' %}" class="alert-link">View all pets</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    transition: transform 0.2s;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.card-img-top {
+    transition: all 0.3s ease;
+}
+.card:hover .card-img-top {
+    filter: brightness(1.05);
+}
+.badge {
+    font-weight: normal;
+    padding: 0.5em 0.75em;
+}
+.btn-outline-primary.active {
+    box-shadow: none;
+}
+.text-muted a {
+    color: inherit;
+}
+.text-muted a:hover {
+    color: var(--bs-primary);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let adoptionModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    adoptionModal = new bootstrap.Modal(document.getElementById('adoptionModal'), {
+        keyboard: false,
+        backdrop: 'static'
+    });
+});
+
+function openAdoptionModal(petId, petName) {
+    document.getElementById('petId').value = petId;
+    document.getElementById('petName').textContent = petName;
+    adoptionModal.show();
+}
+
+document.getElementById('adoptionRequestForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = this;
+    const submitButton = form.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    form.submit();
+});
+
+function removeFromAdoption(petId) {
+    if (confirm('Are you sure you want to remove this pet from adoption?')) {
+        window.location.href = `/pets/${petId}/remove-from-adoption/`;
+    }
+}
+
+function makeAvailableForAdoption(petId) {
+    if (confirm('Make this pet available for adoption?')) {
+        window.location.href = `/pets/${petId}/make-available/`;
+    }
+}
+
+function deletePet(petId) {
+    if (confirm('Are you sure you want to delete this pet? This cannot be undone.')) {
+        window.location.href = `/pets/${petId}/delete/`;
+    }
+}
+</script>
+{% endblock %}

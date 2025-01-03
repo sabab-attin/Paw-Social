@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Main Event Content -->
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Event Details Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h1 class="h2">{{ event.title }}</h1>
+                    
+                    <!-- Event Metadata -->
+                    <div class="text-muted mb-4">
+                        <p>
+                            <i class="bi bi-calendar"></i> {{ event.date|date:"F d, Y - g:i A" }}<br>
+                            <i class="bi bi-geo-alt"></i> {{ event.location }}<br>
+                            <i class="bi bi-person"></i> {{ event.organizer.username }}
+                        </p>
+                    </div>
+
+                    <!-- Event Description -->
+                    <div class="mb-4">
+                        {{ event.details|linebreaks }}
+                    </div>
+
+                    <!-- Event Actions -->
+                    {% if user.is_authenticated %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn {% if is_participant %}btn-outline-danger{% else %}btn-primary{% endif %}">
+                                {{ is_participant|yesno:"Leave,Join" }} Event
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <a href="{% url 'login' %}">Log in</a> to participate in this event.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Participants List -->
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="h4">Participants ({{ event.participants.count }})</h3>
+                    <div class="row g-3">
+                        {% for participant in event.participants.all %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="d-flex align-items-center">
+                                    <img src="/static/images/default-avatar.png" 
+                                         class="rounded-circle me-2" 
+                                         alt="" 
+                                         width="40" 
+                                         height="40">
+                                    <span>{{ participant.username }}</span>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="col">
+                                <p class="text-muted">No participants yet.</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Event Status -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="h4">Event Status</h3>
+                    <div class="alert {% if event.date|date:'Y-m-d' >= today|date:'Y-m-d' %}alert-success{% else %}alert-secondary{% endif %}">
+                        {{ event.date|date:'Y-m-d'|yesno:"Upcoming event,Event has passed" }}
+                    </div>
+                    <p class="mb-0">
+                        <strong>Participants:</strong> {{ event.participants.count }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Similar Events -->
+            {% if similar_events %}
+                <div class="card">
+                    <div class="card-body">
+                        <h3 class="h4">Similar Events</h3>
+                        <div class="list-group list-group-flush">
+                            {% for similar_event in similar_events %}
+                                <a href="{% url 'event_detail' similar_event.id %}" 
+                                   class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ similar_event.title }}</h6>
+                                        <small>{{ similar_event.date|date:"M d" }}</small>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

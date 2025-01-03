@@ -1,0 +1,275 @@
+{% extends 'base.html' %}
+
+{% block title %}Marketplace - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+   <div class="row">
+       <!-- Filters -->
+       <div class="col-md-3">
+           <div class="card mb-4">
+               <div class="card-header">
+                   <h4 class="mb-0">Filters</h4>
+               </div>
+               <div class="card-body">
+                   <!-- Filter Form -->
+                   <form method="get" id="sidebarFilterForm">
+                       <!-- Price Range -->
+                       <div class="mb-3">
+                           <label class="form-label">Price Range</label>
+                           <div class="input-group mb-2">
+                               <span class="input-group-text">tk</span>
+                               <input type="number" 
+                                      name="min_price" 
+                                      class="form-control" 
+                                      placeholder="Min"
+                                      value="{{ min_price|default:'' }}">
+                           </div>
+                           <div class="input-group">
+                               <span class="input-group-text">tk</span>
+                               <input type="number" 
+                                      name="max_price" 
+                                      class="form-control" 
+                                      placeholder="Max"
+                                      value="{{ max_price|default:'' }}">
+                           </div>
+                       </div>
+
+                       <!-- Status Filter -->
+                       <div class="mb-3">
+                           <label class="form-label">Status</label>
+                           <select name="status" class="form-select" onchange="this.form.submit()">
+                               <option value="">All Status</option>
+                               <option value="in_stock" {% if selected_status == 'in_stock' %}selected{% endif %}>
+                                   In Stock
+                               </option>
+                               <option value="out_of_stock" {% if selected_status == 'out_of_stock' %}selected{% endif %}>
+                                   Out of Stock
+                               </option>
+                           </select>
+                       </div>
+
+                       <!-- Apply Filters Button -->
+                       <button type="submit" class="btn btn-primary w-100 mb-2">Apply Filters</button>
+                       <a href="{% url 'marketplace' %}" class="btn btn-outline-secondary w-100">Clear Filters</a>
+                   </form>
+               </div>
+           </div>
+       </div>
+
+       <!-- Products Section -->
+       <div class="col-md-9">
+           <!-- Search and Sort -->
+           <div class="card mb-4">
+               <div class="card-body">
+                   <form method="get" id="searchSortForm">
+                       <div class="row">
+                           <!-- Search -->
+                           <div class="col-md-8">
+                               <div class="input-group">
+                                   <input type="text" 
+                                          name="search" 
+                                          class="form-control" 
+                                          placeholder="Search products..."
+                                          value="{{ search_query|default:'' }}">
+                                   <button type="submit" class="btn btn-outline-secondary">
+                                       <i class="fas fa-search"></i>
+                                   </button>
+                               </div>
+                           </div>
+                           <!-- Sort -->
+                           <div class="col-md-4">
+                               <select name="sort" class="form-select" onchange="this.form.submit()">
+                                   <option value="">Sort by...</option>
+                                   <option value="latest" {% if selected_sort == 'latest' %}selected{% endif %}>Latest</option>
+                                   <option value="oldest" {% if selected_sort == 'oldest' %}selected{% endif %}>Oldest</option>
+                                   <option value="price_low" {% if selected_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                                   <option value="price_high" {% if selected_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                               </select>
+                           </div>
+                       </div>
+                   </form>
+               </div>
+           </div>
+
+           <!-- Products Grid -->
+           <div class="row">
+               {% if listings %}
+                   {% for listing in listings %}
+                   <div class="col-md-4 mb-4">
+                       <div class="card h-100">
+                           <!-- Product Image -->
+                           {% if listing.product_images.all|length > 0 %}
+                               <img src="{{ listing.product_images.first.image.url }}" 
+                                    class="card-img-top" 
+                                    alt="{{ listing.product_name }}"
+                                    style="height: 200px; object-fit: cover;">
+                           {% else %}
+                               <img src="https://via.placeholder.com/200" 
+                                    class="card-img-top" 
+                                    alt="{{ listing.product_name }}"
+                                    style="height: 200px; object-fit: cover;">
+                           {% endif %}
+
+                           <div class="card-body">
+                               <!-- Product Title and Delete Button -->
+                               <div class="d-flex justify-content-between align-items-start mb-2">
+                                   <h5 class="card-title mb-0">{{ listing.product_name }}</h5>
+                                   {% if user == listing.seller %}
+                                       <form method="post" action="{% url 'delete_listing' listing.id %}" 
+                                             onsubmit="return confirm('Are you sure you want to delete this listing?');">
+                                           {% csrf_token %}
+                                           <button type="submit" class="btn btn-outline-danger btn-sm">
+                                               <i class="fas fa-trash"></i>
+                                           </button>
+                                       </form>
+                                   {% endif %}
+                               </div>
+
+                               <!-- Product Description -->
+                               <p class="text-muted mb-3">{{ listing.description|truncatewords:15 }}</p>
+
+                               <!-- Price and Stock Status -->
+                               <div class="d-flex justify-content-between align-items-center mb-3">
+                                   <h5 class="text-primary mb-0">tk {{ listing.price }}</h5>
+                                   <span class="badge {% if listing.quantity > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                       {% if listing.quantity > 0 %}
+                                           In Stock
+                                       {% else %}
+                                           Out of Stock
+                                       {% endif %}
+                                   </span>
+                               </div>
+
+                               <!-- Quantity Management (For Seller) -->
+                               {% if user == listing.seller %}
+                                   <form method="post" class="mb-3">
+                                       {% csrf_token %}
+                                       <div class="input-group">
+                                           <input type="hidden" name="listing_id" value="{{ listing.id }}">
+                                           <label class="input-group-text">Quantity</label>
+                                           <input type="number" 
+                                                  name="quantity" 
+                                                  class="form-control" 
+                                                  value="{{ listing.quantity }}" 
+                                                  min="0">
+                                           <button type="submit" 
+                                                   name="update_quantity" 
+                                                   class="btn btn-outline-primary">
+                                               Update
+                                           </button>
+                                       </div>
+                                   </form>
+                               {% else %}
+                                   <p class="mb-3">
+                                       <small class="text-muted">
+                                           Available Quantity: {{ listing.quantity }}
+                                       </small>
+                                   </p>
+                               {% endif %}
+
+                               <!-- Action Buttons (For Buyers) -->
+                               {% if user != listing.seller and listing.quantity > 0 %}
+                                   <div class="d-grid gap-2">
+                                       <a href="{% url 'contact_seller' listing.id %}" 
+                                          class="btn btn-outline-primary btn-sm">
+                                           <i class="fas fa-envelope me-1"></i>Contact Seller
+                                       </a>
+                                       <a href="{% url 'create_order' listing.id %}" 
+                                          class="btn btn-primary btn-sm">
+                                           <i class="fas fa-shopping-cart me-1"></i>Buy Now
+                                       </a>
+                                   </div>
+                               {% endif %}
+                           </div>
+
+                           <!-- Card Footer -->
+                           <div class="card-footer bg-light">
+                               <div class="d-flex justify-content-between align-items-center">
+                                   <small class="text-muted">
+                                       <i class="fas fa-user me-1"></i>{{ listing.seller.username }}
+                                   </small>
+                                   <small class="text-muted">
+                                       <i class="fas fa-clock me-1"></i>
+                                       {{ listing.created_at|timesince }} ago
+                                   </small>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+                   {% endfor %}
+               {% else %}
+                   <div class="col-12">
+                       <div class="alert alert-info">
+                           <i class="fas fa-info-circle me-2"></i>
+                           No products available at the moment.
+                       </div>
+                   </div>
+               {% endif %}
+           </div>
+       </div>
+   </div>
+</div>
+
+<!-- Add Product Modal for All Users -->
+{% if user.is_authenticated %}
+<div class="modal fade" id="addProductModal" tabindex="-1">
+   <div class="modal-dialog">
+       <div class="modal-content">
+           <div class="modal-header">
+               <h5 class="modal-title">Add New Product</h5>
+               <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+           </div>
+           <div class="modal-body">
+               <form method="post" enctype="multipart/form-data">
+                   {% csrf_token %}
+                   <div class="mb-3">
+                       <label for="product_name" class="form-label">Product Name</label>
+                       <input type="text" class="form-control" id="product_name" name="product_name" required>
+                   </div>
+                   <div class="mb-3">
+                       <label for="description" class="form-label">Description</label>
+                       <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                   </div>
+                   <div class="mb-3">
+                       <label for="price" class="form-label">Price</label>
+                       <input type="number" class="form-control" id="price" name="price" min="0.01" step="0.01" required>
+                   </div>
+                   <div class="mb-3">
+                       <label for="quantity" class="form-label">Quantity</label>
+                       <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+                   </div>
+                   <div class="mb-3">
+                       <label for="product_image" class="form-label">Product Image</label>
+                       <input type="file" class="form-control" id="product_image" name="product_image" accept="image/*" required>
+                   </div>
+                   <button type="submit" class="btn btn-primary w-100">
+                       <i class="fas fa-plus me-1"></i>Add Product
+                   </button>
+               </form>
+           </div>
+       </div>
+   </div>
+</div>
+
+<!-- Floating Add Product Button -->
+<div class="position-fixed bottom-0 end-0 p-3">
+   <button class="btn btn-primary rounded-circle p-3 shadow" 
+           data-bs-toggle="modal" 
+           data-bs-target="#addProductModal">
+       <i class="fas fa-plus"></i>
+   </button>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+   // Auto-submit form when sort or status changes
+   document.querySelectorAll('select[name="sort"], select[name="status"]').forEach(select => {
+       select.addEventListener('change', () => {
+           select.closest('form').submit();
+       });
+   });
+</script>
+{% endblock %}

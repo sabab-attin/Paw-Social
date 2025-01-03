@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block title %}Marketplace - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Filters -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4>Filters</h4>
+                    <form method="get">
+                        <!-- Categories -->
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            {% for category in categories %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="{{ category }}">
+                                <label class="form-check-label" for="{{ category }}">{{ category|title }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Price Range -->
+                        <div class="mb-3">
+                            <label class="form-label">Price Range</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">tk</span>
+                                <input type="number" class="form-control" placeholder="Min">
+                            </div>
+                            <div class="input-group">
+                                <span class="input-group-text">tk</span>
+                                <input type="number" class="form-control" placeholder="Max">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Apply</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Section -->
+        <div class="col-md-9">
+            <!-- Search and Sort -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Search products...">
+                                <button class="btn btn-outline-secondary">Search</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select">
+                                <option>Sort by: Latest</option>
+                                <option>Price: Low to High</option>
+                                <option>Price: High to Low</option>
+                                <option>Most Popular</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="row">
+                {% if listings %}
+                    {% for listing in listings %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <img src="https://via.placeholder.com/200" class="card-img-top" alt="{{ listing.product_name }}">
+                            <div class="card-body">
+                                <h5>{{ listing.product_name }}</h5>
+                                <p class="text-muted">{{ listing.description|truncatewords:15 }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="h5 mb-0">${{ listing.price }}</span>
+                                    <span class="badge bg-{{ listing.status|yesno:'success,secondary' }}">
+                                        {{ listing.status|title }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <small class="text-muted">Sold by: {{ listing.seller.business.name }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <p>No products available.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Pagination -->
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item"><a class="page-link" href="#">Next</a></li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated and user.account_type == 'professional' %}
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Add New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        {{ field.errors }}
+                        {{ field }}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-primary">Add Product</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Button -->
+<div class="position-fixed bottom-0 end-0 p-3">
+    <button class="btn btn-primary rounded-circle p-3" data-bs-toggle="modal" data-bs-target="#addProductModal">
+        <i class="fas fa-plus"></i>
+    </button>
+</div>
+{% endif %}
+{% endblock %}

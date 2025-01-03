@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ viewed_user.username }}'s Profile - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Profile Info -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body text-center">
+                    <img src="{{ viewed_user.get_profile_picture }}" class="rounded-circle mb-3" width="150" height="150" alt="Profile Picture">
+                    <h3>{{ viewed_user.username }}</h3>
+                    <p class="text-muted">{{ viewed_user.get_account_type_display }}</p>
+                    
+                    <div class="d-flex justify-content-around mb-3">
+                        <div>
+                            <h5>{{ viewed_user.followers_count }}</h5>
+                            <small class="text-muted">Followers</small>
+                        </div>
+                        <div>
+                            <h5>{{ viewed_user.following_count }}</h5>
+                            <small class="text-muted">Following</small>
+                        </div>
+                    </div>
+
+                    {% if user != viewed_user %}
+                        <form method="post" action="{% url 'follow_user' viewed_user.username %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn {% if user in viewed_user.followers.all %}btn-outline-primary{% else %}btn-primary{% endif %}">
+                                {% if user in viewed_user.followers.all %}
+                                    Unfollow
+                                {% else %}
+                                    Follow
+                                {% endif %}
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Contact Information</h5>
+                    {% if viewed_user.email %}
+                        <p class="mb-2">
+                            <i class="fas fa-envelope me-2"></i>
+                            {{ viewed_user.email }}
+                        </p>
+                    {% endif %}
+                    {% if viewed_user.phone %}
+                        <p class="mb-2">
+                            <i class="fas fa-phone me-2"></i>
+                            {{ viewed_user.phone }}
+                        </p>
+                    {% endif %}
+                    {% if viewed_user.city %}
+                        <p class="mb-0">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            {{ viewed_user.city }}
+                            {% if viewed_user.address %}
+                                <br>
+                                <span class="ms-4">{{ viewed_user.address }}</span>
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Column -->
+        <div class="col-md-8">
+            <!-- Pets Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4 class="mb-0">{{ viewed_user.username }}'s Pets</h4>
+                </div>
+                <div class="card-body">
+                    {% if pets %}
+                        <div class="row">
+                            {% for pet in pets %}
+                                <div class="col-md-6 mb-4">
+                                    <div class="card h-100">
+                                        <img src="{{ pet.get_pet_picture }}" 
+                                             class="card-img-top" 
+                                             alt="{{ pet.name }}"
+                                             style="height: 200px; object-fit: cover;">
+                                        <div class="card-body">
+                                            <h5 class="card-title mb-1">{{ pet.name }}</h5>
+                                            <p class="text-muted small mb-2">
+                                                {{ pet.get_species_display }} • {{ pet.breed }} • {{ pet.age }} years
+                                            </p>
+                                            {% if pet.is_stray %}
+                                                <span class="badge bg-warning text-dark mb-2">Stray</span>
+                                            {% endif %}
+                                            {% if pet.adoption_status == 'available' %}
+                                                <span class="badge bg-success mb-2">Available for Adoption</span>
+                                                {% if user != viewed_user %}
+                                                    <div class="mt-2">
+                                                        <a href="{% url 'request_adoption' pet.id %}" 
+                                                           class="btn btn-primary btn-sm">
+                                                            Request Adoption
+                                                        </a>
+                                                    </div>
+                                                {% endif %}
+                                            {% elif pet.adoption_status == 'adopted' %}
+                                                <span class="badge bg-info mb-2">Adopted</span>
+                                                {% if pet.adopted_by %}
+                                                    <small class="d-block text-muted">
+                                                        Adopted by {{ pet.adopted_by.username }}
+                                                    </small>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No pets added yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Posts Section -->
+            <h4 class="mb-4">Posts</h4>
+            {% for post in posts %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="d-flex align-items-center">
+                                <img src="{{ post.user.get_profile_picture }}" 
+                                     class="rounded-circle me-2" 
+                                     width="40" height="40" 
+                                     alt="{{ post.user.username }}'s profile">
+                                <div>
+                                    <h6 class="mb-0">{{ post.user.username }}</h6>
+                                    <small class="text-muted">{{ post.created_at|timesince }} ago</small>
+                                </div>
+                            </div>
+                            {% if user == post.user %}
+                                <div class="dropdown">
+                                    <button class="btn btn-link text-dark p-0" type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <form action="{% url 'delete_post' post.id %}" method="post" 
+                                                  onsubmit="return confirm('Are you sure you want to delete this post?');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="fas fa-trash-alt me-2"></i>Delete Post
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <p class="card-text">{{ post.content }}</p>
+                        {% if post.image %}
+                            <img src="{{ post.image.url }}" class="img-fluid rounded mb-3" alt="Post image">
+                        {% endif %}
+
+                        <div class="d-flex gap-2">
+                            <form method="post" action="{% url 'like_post' post.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm {% if request.user in post.likes.all %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    <i class="fas fa-thumbs-up"></i> {{ post.likes.count }}
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'dislike_post' post.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm {% if request.user in post.dislikes.all %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                                    <i class="fas fa-thumbs-down"></i> {{ post.dislikes.count }}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="card">
+                    <div class="card-body text-center">
+                        <p class="text-muted mb-0">No posts yet.</p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dropdown-item {
+        cursor: pointer;
+    }
+    .btn-link {
+        text-decoration: none;
+    }
+    .card-img-top {
+        transition: transform 0.2s;
+    }
+    .card-img-top:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2>{{ professional.username }}'s Professional Profile</h2>
+                    <p class="text-muted">{{ professional.get_professional_type_display }}</p>
+                    
+                    <!-- Rating Display -->
+                    <div class="mb-3">
+                        <h4>Rating: {{ profile.average_rating|floatformat:1 }} / 5.0</h4>
+                        <div class="stars">
+                            {% for i in "12345"|make_list %}
+                            <i class="fas fa-star {% if forloop.counter <= profile.average_rating %}text-warning{% endif %}"></i>
+                            {% endfor %}
+                        </div>
+                        <small>({{ profile.total_ratings }} ratings)</small>
+                    </div>
+
+                    <!-- Professional Info -->
+                    <div class="mb-3">
+                        <h4>About</h4>
+                        <p>{{ profile.description }}</p>
+                        
+                        {% if professional.professional_type == 'vet' %}
+                            <h5>Specialties</h5>
+                            <p>{{ profile.specialties }}</p>
+                            <h5>Schedule</h5>
+                            <p>{{ profile.schedule }}</p>
+                        {% elif professional.professional_type == 'shelter' %}
+                            <h5>Facilities</h5>
+                            <p>{{ profile.facilities }}</p>
+                        {% elif professional.professional_type == 'groomer' %}
+                            <h5>Services</h5>
+                            <p>{{ profile.services }}</p>
+                        {% elif professional.business_type == 'shop' %}
+                            <h5>Business Hours</h5>
+                            <p>{{ profile.business_hours }}</p>
+                        {% endif %}
+                    </div>
+
+                    {% if form %}
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                            <button type="submit" class="btn btn-primary">Update Profile</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Reviews Section -->
+            <div class="card">
+                <div class="card-body">
+                    <h3>Reviews</h3>
+                    
+                    {% if review_form %}
+                        <form method="post" action="{% url 'add_review' professional.username %}">
+                            {% csrf_token %}
+                            {{ review_form.as_p }}
+                            <button type="submit" class="btn btn-primary">Submit Review</button>
+                        </form>
+                    {% endif %}
+
+                    <div class="reviews-list mt-4">
+                        {% for review in reviews %}
+                            <div class="review-item mb-3 p-3 border rounded">
+                                <div class="d-flex justify-content-between">
+                                    <h5>{{ review.reviewer.username }}</h5>
+                                    <div class="stars">
+                                        {% for i in "12345"|make_list %}
+                                            <i class="fas fa-star {% if forloop.counter <= review.rating %}text-warning{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <p>{{ review.review_text }}</p>
+                                <small class="text-muted">{{ review.created_at|date:"F d, Y" }}</small>
+                            </div>
+                        {% empty %}
+                            <p>No reviews yet.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

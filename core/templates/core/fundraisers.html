@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Fundraisers - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Active Fundraisers</h2>
+            {% if fundraisers %}
+                {% for fundraiser in fundraisers %}
+                    <div class="card mb-4">
+                        <div class="row g-0">
+                            <div class="col-md-4">
+                                {% if fundraiser.campaign_image %}
+                                    <img src="{{ fundraiser.campaign_image.url }}" 
+                                         class="img-fluid rounded" 
+                                         style="height: 100%; object-fit: cover;" 
+                                         alt="{{ fundraiser.title }}">
+                                {% else %}
+                                    <img src="{% static 'core/images/default_campaign.png' %}" 
+                                         class="img-fluid rounded" 
+                                         style="height: 100%; object-fit: cover;" 
+                                         alt="{{ fundraiser.title }}">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <h3 class="card-title">{{ fundraiser.title }}</h3>
+                                        {% if user == fundraiser.created_by %}
+                                            <form method="post" 
+                                                  action="{% url 'delete_fundraiser' fundraiser.id %}" 
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Are you sure you want to delete this fundraiser? This action cannot be undone.');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-muted">Created by {{ fundraiser.created_by.username }}</p>
+                                    
+                                    <div class="progress mb-3">
+                                        {% widthratio fundraiser.collected_amount fundraiser.target_amount 100 as percentage %}
+                                        <div class="progress-bar" 
+                                             role="progressbar" 
+                                             style="width: {{ percentage }}%"
+                                             aria-valuenow="{{ percentage }}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            {{ percentage }}%
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <span>
+                                            <strong>Raised:</strong> ${{ fundraiser.collected_amount }}
+                                        </span>
+                                        <span>
+                                            <strong>Goal:</strong> ${{ fundraiser.target_amount }}
+                                        </span>
+                                    </div>
+
+                                    <p class="card-text">
+                                        <strong>For:</strong> {{ fundraiser.beneficiary.name }} 
+                                        ({{ fundraiser.beneficiary.get_species_display }})
+                                    </p>
+
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <a href="#" class="btn btn-primary" 
+                                           data-bs-toggle="modal" 
+                                           data-bs-target="#donateModal{{ fundraiser.id }}">
+                                            Donate Now
+                                        </a>
+                                        {% if fundraiser.shelter %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle"></i> 
+                                                Verified by {{ fundraiser.shelter.business.name }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Donate Modal -->
+                    <div class="modal fade" id="donateModal{{ fundraiser.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Donate to {{ fundraiser.title }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form method="post" action="{% url 'donate' fundraiser.id %}">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label class="form-label">Amount ($)</label>
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   name="amount" 
+                                                   min="1" 
+                                                   step="0.01" 
+                                                   required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Message (Optional)</label>
+                                            <textarea class="form-control" 
+                                                      name="message" 
+                                                      rows="3"></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Confirm Donation</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No active fundraisers at the moment.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            {% if user.is_authenticated %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title">Start a Fundraiser</h3>
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {% for field in form %}
+                                <div class="mb-3">
+                                    <label for="{{ field.id_for_label }}" 
+                                           class="form-label">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="alert alert-danger mt-1">
+                                            {{ field.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            <button type="submit" class="btn btn-primary">Create Fundraiser</button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Fundraising Tips</h3>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-camera"></i> Add clear photos of the pet
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-pen"></i> Tell a compelling story
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-bullseye"></i> Set a realistic goal
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-share-alt"></i> Share on social media
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

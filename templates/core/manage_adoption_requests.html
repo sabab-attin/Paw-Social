@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Adoption Requests - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="card-title mb-0">Adoption Requests for {{ pet.name }}</h2>
+            <a href="{% url 'pets' %}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Back to Pets
+            </a>
+        </div>
+
+        <div class="card-body">
+            <!-- Pet Info -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <img src="{{ pet.get_pet_picture }}" class="img-fluid rounded" alt="{{ pet.name }}">
+                </div>
+                <div class="col-md-9">
+                    <h4>Pet Details</h4>
+                    <p class="mb-1"><strong>Species:</strong> {{ pet.get_species_display }}</p>
+                    <p class="mb-1"><strong>Breed:</strong> {{ pet.breed }}</p>
+                    <p class="mb-1"><strong>Age:</strong> {{ pet.age }} years</p>
+                    {% if pet.is_stray %}
+                        <span class="badge bg-warning text-dark">Stray</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Adoption Requests -->
+            {% if adoption_requests %}
+                {% for request in adoption_requests %}
+                    <div class="card mb-3 {% if request.status == 'pending' %}border-primary{% elif request.status == 'approved' %}border-success{% else %}border-danger{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="card-title">Request from {{ request.requestor.username }}</h5>
+                                    <p class="text-muted mb-2">
+                                        Requested {{ request.created_at|timesince }} ago
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Contact Number:</strong> {{ request.contact_number }}
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Message:</strong><br>
+                                        {{ request.message }}
+                                    </p>
+                                </div>
+                                {% if request.status == 'pending' %}
+                                    <div class="d-flex gap-2">
+                                        <form method="post" action="{% url 'approve_adoption' request.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-success btn-sm"
+                                                    onclick="return confirm('Are you sure you want to approve this request? {{ pet.name }} will be transferred to {{ request.requestor.username }}.')">
+                                                <i class="fas fa-check me-1"></i>Approve
+                                            </button>
+                                        </form>
+                                        <form method="post" action="{% url 'reject_adoption' request.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm"
+                                                    onclick="return confirm('Are you sure you want to reject this request?')">
+                                                <i class="fas fa-times me-1"></i>Reject
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% else %}
+                                    <span class="badge {% if request.status == 'approved' %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ request.status|title }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle me-2"></i>No adoption requests for {{ pet.name }} yet.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.card.border-primary {
+    border-left: 4px solid var(--bs-primary) !important;
+}
+.card.border-success {
+    border-left: 4px solid var(--bs-success) !important;
+}
+.card.border-danger {
+    border-left: 4px solid var(--bs-danger) !important;
+}
+.badge {
+    font-weight: normal;
+    padding: 0.5em 0.75em;
+}
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Events - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>Pet Events</h2>
+            {% if events %}
+                {% for event in events %}
+                    <div class="card event-card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <h3 class="card-title">{{ event.title }}</h3>
+                                {% if user == event.organizer %}
+                                    <form method="post" class="d-inline" 
+                                          onsubmit="return confirm('Are you sure you want to delete this event?');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="event_id" value="{{ event.id }}">
+                                        <button type="submit" name="delete_event" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                            <div class="event-details">
+                                <p><strong>📅 Date:</strong> {{ event.date|date:"F d, Y - g:i A" }}</p>
+                                <p><strong>📍 Location:</strong> {{ event.location }}</p>
+                                <p><strong>👤 Organizer:</strong> {{ event.organizer.username }}</p>
+                                <p><strong>👥 Participants:</strong> {{ event.participants.count }}</p>
+                                <p>{{ event.details|truncatewords:30 }}</p>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="event_id" value="{{ event.id }}">
+                                    <button type="submit" name="join_event" 
+                                            class="btn {% if user in event.participants.all %}btn-outline-primary{% else %}btn-primary{% endif %}">
+                                        {% if user in event.participants.all %}
+                                            Leave Event
+                                        {% else %}
+                                            Join Event
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <span class="text-muted">{{ event.participants.count }} participant{{ event.participants.count|pluralize }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>No events scheduled at the moment.</p>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            {% if user.is_authenticated and user.account_type == 'professional' %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title">Create Event</h3>
+                        <form method="post">
+                            {% csrf_token %}
+                            {% for field in form %}
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        {{ field.label }}
+                                    </label>
+                                    {{ field.errors }}
+                                    {{ field }}
+                                </div>
+                            {% endfor %}
+                            <button type="submit" name="create_event" class="btn btn-primary">Create Event</button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Event Categories</h3>
+                    <div class="list-group">
+                        <a href="#" class="list-group-item list-group-item-action">Adoption Events</a>
+                        <a href="#" class="list-group-item list-group-item-action">Training Workshops</a>
+                        <a href="#" class="list-group-item list-group-item-action">Pet Shows</a>
+                        <a href="#" class="list-group-item list-group-item-action">Vet Camps</a>
+                        <a href="#" class="list-group-item list-group-item-action">Social Meetups</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

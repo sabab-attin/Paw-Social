@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Create Account</h2>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Account Type Selection -->
+                    <div class="mb-3">
+                        <label for="id_account_type" class="form-label">Account Type</label>
+                        {{ form.account_type }}
+                    </div>
+
+                    <!-- Professional Type Fields (Initially Hidden) -->
+                    <div id="professional_fields" style="display: none;">
+                        <div class="mb-3">
+                            <label for="id_professional_type" class="form-label">Professional Type</label>
+                            {{ form.professional_type }}
+                        </div>
+                        <div class="mb-3" id="business_type_field" style="display: none;">
+                            <label for="id_business_type" class="form-label">Business Type</label>
+                            {{ form.business_type }}
+                        </div>
+                    </div>
+
+                    <!-- Basic Fields -->
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">Username</label>
+                        {{ form.username }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">Email</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password1" class="form-label">Password</label>
+                        {{ form.password1 }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">Confirm Password</label>
+                        {{ form.password2 }}
+                    </div>
+                    
+                    <!-- Contact Information -->
+                    <div class="mb-3">
+                        <label for="id_phone" class="form-label">Phone</label>
+                        {{ form.phone }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_address" class="form-label">Address</label>
+                        {{ form.address }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_city" class="form-label">City</label>
+                        {{ form.city }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_zip_code" class="form-label">ZIP Code</label>
+                        {{ form.zip_code }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_profile_picture" class="form-label">Profile Picture</label>
+                        {{ form.profile_picture }}
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Register</button>
+                    </div>
+                </form>
+                <div class="mt-3 text-center">
+                    <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const accountTypeSelect = document.getElementById('id_account_type');
+    const professionalFields = document.getElementById('professional_fields');
+    const professionalTypeSelect = document.getElementById('id_professional_type');
+    const businessTypeField = document.getElementById('business_type_field');
+
+    function handleAccountTypeChange() {
+        if (accountTypeSelect.value === 'professional') {
+            professionalFields.style.display = 'block';
+        } else {
+            professionalFields.style.display = 'none';
+            if (professionalTypeSelect) {
+                professionalTypeSelect.value = '';
+            }
+            if (businessTypeField) {
+                businessTypeField.style.display = 'none';
+            }
+        }
+    }
+
+    function handleProfessionalTypeChange() {
+        if (professionalTypeSelect && professionalTypeSelect.value === 'business') {
+            businessTypeField.style.display = 'block';
+        } else if (businessTypeField) {
+            businessTypeField.style.display = 'none';
+        }
+    }
+
+    // Clear professional and business type values when switching to regular user
+    accountTypeSelect.addEventListener('change', function() {
+        if (this.value === 'regular') {
+            if (professionalTypeSelect) {
+                professionalTypeSelect.value = '';
+            }
+            const businessTypeSelect = document.getElementById('id_business_type');
+            if (businessTypeSelect) {
+                businessTypeSelect.value = '';
+            }
+        }
+        handleAccountTypeChange();
+    });
+
+    if (professionalTypeSelect) {
+        professionalTypeSelect.addEventListener('change', handleProfessionalTypeChange);
+    }
+
+    // Initial check on page load
+    handleAccountTypeChange();
+    handleProfessionalTypeChange();
+});
+</script>
+{% endblock %}

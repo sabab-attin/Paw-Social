@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ fundraiser.title }} - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">{{ fundraiser.title }}</h2>
+                    <p class="text-muted">Created by {{ fundraiser.created_by.username }}</p>
+
+                    <!-- Progress Section -->
+                    <div class="fundraiser-progress mb-4">
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: {{ fundraiser.collected_amount|div:fundraiser.target_amount|mul:100 }}%">
+                                {{ fundraiser.collected_amount|div:fundraiser.target_amount|mul:100|floatformat:1 }}%
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span><strong>Raised:</strong> ${{ fundraiser.collected_amount }}</span>
+                            <span><strong>Goal:</strong> ${{ fundraiser.target_amount }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Beneficiary Info -->
+                    <div class="beneficiary-info mb-4">
+                        <h4>About {{ fundraiser.beneficiary.name }}</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <img src="https://via.placeholder.com/200" class="img-fluid rounded" 
+                                     alt="{{ fundraiser.beneficiary.name }}">
+                            </div>
+                            <div class="col-md-8">
+                                <p><strong>Species:</strong> {{ fundraiser.beneficiary.species|title }}</p>
+                                <p><strong>Breed:</strong> {{ fundraiser.beneficiary.breed }}</p>
+                                <p><strong>Age:</strong> {{ fundraiser.beneficiary.age }} years</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                        <!-- Donation Form -->
+                        <div class="donation-form mb-4">
+                            <h4>Make a Donation</h4>
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="amount" class="form-label">Amount ($)</label>
+                                    <input type="number" class="form-control" id="amount" name="amount" 
+                                           min="1" step="0.01" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="message" class="form-label">Message (Optional)</label>
+                                    <textarea class="form-control" id="message" name="message" rows="3"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Donate Now</button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            Please <a href="{% url 'login' %}">login</a> to make a donation.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Donations -->
+            <div class="card">
+                <div class="card-body">
+                    <h4>Recent Donations</h4>
+                    <div class="list-group">
+                        {% for i in "12345" %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Anonymous Donor</h6>
+                                        <small class="text-muted">Thank you for helping!</small>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">$50</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Verification Status -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">Verification Status</h4>
+                    {% if fundraiser.shelter %}
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> Verified by {{ fundraiser.shelter.business.name }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            Verification pending
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Share Fundraiser -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title">Share</h4>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary">
+                            <i class="fab fa-facebook"></i> Share on Facebook
+                        </button>
+                        <button class="btn btn-outline-info">
+                            <i class="fab fa-twitter"></i> Share on Twitter
+                        </button>
+                        <button class="btn btn-outline-secondary">
+                            <i class="fas fa-link"></i> Copy Link
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Similar Fundraisers -->
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Similar Fundraisers</h4>
+                    <div class="list-group">
+                        {% for i in "123" %}
+                            <a href="#" class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">Help Another Pet</h6>
+                                        <small class="text-muted">50% funded</small>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">$500</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

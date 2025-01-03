@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}My Pets - PAW SOCIAL{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Pets List -->
+        <div class="col-md-8">
+            <h2>My Pets</h2>
+            <div class="row">
+                {% if pets %}
+                    {% for pet in pets %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="{{ pet.name }}">
+                            <div class="card-body">
+                                <h5>{{ pet.name }}</h5>
+                                <p>
+                                    <strong>Species:</strong> {{ pet.species|title }}<br>
+                                    <strong>Breed:</strong> {{ pet.breed }}<br>
+                                    <strong>Age:</strong> {{ pet.age }} years
+                                </p>
+                                <button class="btn btn-outline-primary" data-bs-toggle="modal" 
+                                        data-bs-target="#editPet{{ pet.id }}">
+                                    Edit Pet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editPet{{ pet.id }}" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5>Edit {{ pet.name }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <!-- Edit form placeholder -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12">
+                        <p>You haven't added any pets yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Add Pet Form -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3>Add New Pet</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field.errors }}
+                            {{ field }}
+                        </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">Add Pet</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
