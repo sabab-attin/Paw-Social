@@ -38,45 +38,42 @@
                                                     onclick="editPet({{ pet.id }}, '{{ pet.name }}', '{{ pet.species }}', '{{ pet.breed }}', {{ pet.age }}, {{ pet.is_stray|yesno:'true,false' }})">
                                                 <i class="fas fa-edit me-1"></i>Edit
                                             </button>
-
                                             <button type="button" class="btn btn-outline-secondary btn-sm"
                                                     onclick="updatePicture({{ pet.id }})">
                                                 <i class="fas fa-camera me-1"></i>Update Picture
                                             </button>
-
-                                            {% if pet.adoption_status == 'available' %}
-                                                <!-- Only owner sees these management buttons when pet is available -->
-                                                <a href="{% url 'view_adoption_requests' pet.id %}" class="btn btn-info btn-sm">
-                                                    <i class="fas fa-list me-1"></i>Adoption Requests
-                                                </a>
-                                                
-                                                <form method="post" action="{% url 'toggle_pet_adoption' pet.id %}" class="d-inline">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="btn btn-warning btn-sm w-100">
-                                                        <i class="fas fa-times me-1"></i>Remove from Adoption
-                                                    </button>
-                                                </form>
-                                            {% else %}
-                                                <!-- Make available button for owner when pet is not up for adoption -->
-                                                <form method="post" action="{% url 'toggle_pet_adoption' pet.id %}" class="d-inline">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="btn btn-success btn-sm w-100">
-                                                        <i class="fas fa-heart me-1"></i>Make Available
-                                                    </button>
-                                                </form>
+                                            {% if user.is_authenticated and pet.owner == user %}
+                                                {% if pet.adoption_status == 'available' %}
+                                                    <!-- Only owner sees these management buttons when pet is available -->
+                                                    <a href="{% url 'view_adoption_requests' pet.id %}" class="btn btn-info btn-sm">
+                                                        <i class="fas fa-list me-1"></i>Adoption Requests
+                                                    </a>
+                                                    
+                                                    <form method="post" action="{% url 'toggle_pet_adoption' pet.id %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-warning btn-sm w-100">
+                                                            <i class="fas fa-times me-1"></i>Remove from Adoption
+                                                        </button>
+                                                    </form>
+                                                {% else %}
+                                                    <!-- Make available button for owner when pet is not up for adoption -->
+                                                    <form method="post" action="{% url 'toggle_pet_adoption' pet.id %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-success btn-sm w-100">
+                                                            <i class="fas fa-heart me-1"></i>Make Available
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
                                             {% endif %}
-
-
                                             <!-- Delete button only for owner -->
                                             <form method="post" action="{% url 'delete_pet' pet.id %}" 
-                                                    onsubmit="return confirm('Are you sure you want to delete {{ pet.name }}? This cannot be undone.');">
+                                                  onsubmit="return confirm('Are you sure you want to delete {{ pet.name }}? This cannot be undone.');">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-danger btn-sm w-100">
                                                     <i class="fas fa-trash me-1"></i>Delete
                                                 </button>
                                             </form>
-
-                                            {% else %}
+                                        {% else %}
                                             <!-- Only show Request Adoption button to non-owners -->
                                             {% if pet.adoption_status == 'available' %}
                                                 <a href="{% url 'request_adoption' pet.id %}" class="btn btn-primary btn-sm w-100">

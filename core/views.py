@@ -800,18 +800,19 @@ def manage_adoption_requests(request, pet_id):
 
 @login_required
 def toggle_pet_adoption(request, pet_id):
-    pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
+    pet = get_object_or_404(Pet, id=pet_id, owner=request.user)  # Ensure owner access
     pet.toggle_adoption_status()
     messages.success(request, f'Updated adoption status for {pet.name}')
-    return redirect('pets')
+    return redirect('available_adoptions')
 
 @login_required
 def delete_pet(request, pet_id):
-    pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
+    pet = get_object_or_404(Pet, id=pet_id, owner=request.user)  # Ensure owner access
     pet_name = pet.name
     pet.delete()
     messages.success(request, f'{pet_name} has been removed from your pets.')
-    return redirect('pets')
+    return redirect('available_adoptions')
+
 
 @login_required
 def available_adoptions(request):
@@ -848,14 +849,13 @@ def available_adoptions(request):
 
 @login_required
 def view_adoption_requests(request, pet_id):
-    pet = get_object_or_404(Pet, id=pet_id, owner=request.user)
+    pet = get_object_or_404(Pet, id=pet_id, owner=request.user)  # Ensure owner access
     adoption_requests = AdoptionRequest.objects.filter(pet=pet).order_by('-created_at')
-    
-    context = {
+    return render(request, 'core/manage_adoption_requests.html', {
         'pet': pet,
-        'adoption_requests': adoption_requests,
-    }
-    return render(request, 'core/manage_adoption_requests.html', context)
+        'adoption_requests': adoption_requests
+    })
+
 
 @login_required
 def approve_adoption(request, request_id):
