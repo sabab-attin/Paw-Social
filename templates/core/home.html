@@ -194,8 +194,19 @@
                             <h5 class="card-title">Add Service</h5>
                             <form method="post" action="{% url 'add_service' %}">
                                 {% csrf_token %}
-                                {{ service_form.as_p }}
-                                <button type="submit" class="btn btn-primary w-100">Add Service</button>
+                                <div class="mb-3">
+                                    <label class="form-label">Title</label>
+                                    <input type="text" name="title" class="form-control" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea name="description" class="form-control" rows="3" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Price</label>
+                                    <input type="number" name="price" class="form-control" step="0.01" min="0.01" required>
+                                </div>
+                                <button type="submit" name="service_form" class="btn btn-primary w-100">Add Service</button>
                             </form>
                         </div>
                     </div>
@@ -208,7 +219,7 @@
                                     <div class="mb-3">
                                         <h6>{{ service.title }}</h6>
                                         <p class="small mb-1">{{ service.description }}</p>
-                                        <p class="text-primary mb-0">${{ service.price }}</p>
+                                        <p class="text-primary mb-0">tk{{ service.price }}</p>
                                     </div>
                                     {% if not forloop.last %}<hr>{% endif %}
                                 {% endfor %}

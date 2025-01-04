@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import *
+from decimal import Decimal, InvalidOperation
+
 
 class UserRegistrationForm(UserCreationForm):
     class Meta:
@@ -159,15 +161,37 @@ class PostForm(forms.ModelForm):
             'image': forms.FileInput(attrs={'class': 'form-control'})
         }
 
+# In forms.py
 class ServiceForm(forms.ModelForm):
+    title = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter service title'
+        }),
+        required=True
+    )
+    description = forms.CharField(
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Describe your service'
+        }),
+        required=True
+    )
+    price = forms.DecimalField(
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': '0.01',
+            'step': '0.01',
+            'placeholder': 'Enter price'
+        }),
+        required=True,
+        min_value=0.01
+    )
+
     class Meta:
         model = Service
         fields = ['title', 'description', 'price']
-        widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'price': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'})
-        }
 
 class ProfessionalProfileForm(forms.ModelForm):
     class Meta:

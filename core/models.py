@@ -3,10 +3,12 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 import json
+from decimal import Decimal
+
 
 class User(AbstractUser):
     USER_TYPES = (
-        ('regular', 'Regular User'),
+        ('regular', 'Regular User'), 
         ('professional', 'Professional User'),
     )
     PROFESSIONAL_TYPES = (
@@ -43,6 +45,39 @@ class User(AbstractUser):
             return self.profile_picture.url
         return '/static/core/images/default_profile.png'
     
+# CREATE TABLE user (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   username VARCHAR(150) UNIQUE NOT NULL,
+    #   password VARCHAR(128) NOT NULL,
+    #   first_name VARCHAR(150),
+    #   last_name VARCHAR(150),
+    #   email VARCHAR(254) UNIQUE,
+    #   is_staff BOOLEAN NOT NULL DEFAULT FALSE,
+    #   is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    #   date_joined DATETIME NOT NULL,
+    #   account_type VARCHAR(20) DEFAULT 'regular',
+    #   professional_type VARCHAR(20),
+    #   business_type VARCHAR(20),
+    #   followers_count INT DEFAULT 0,
+    #   following_count INT DEFAULT 0,
+    #   phone VARCHAR(15),
+    #   address VARCHAR(255),
+    #   city VARCHAR(100),
+    #   zip_code VARCHAR(10),
+    #   profile_picture VARCHAR(255),
+    #   follower_names TEXT,
+    #   following_names TEXT
+    # );
+    #
+# CREATE TABLE user_followers (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   from_user_id BIGINT NOT NULL,
+    #   to_user_id BIGINT NOT NULL,
+    #   FOREIGN KEY (from_user_id) REFERENCES user(id),
+    #   FOREIGN KEY (to_user_id) REFERENCES user(id),
+    #   UNIQUE KEY unique_followers (from_user_id, to_user_id)
+    # );
+
 
 class Pet(models.Model):
     # Species choices
@@ -138,39 +173,172 @@ class Pet(models.Model):
         ordering = ['-created_at']
 
 
+# CREATE TABLE pet (
+    #   id INT AUTO_INCREMENT PRIMARY KEY,
+    #   name VARCHAR(100) NOT NULL,
+    #   species VARCHAR(20) NOT NULL,
+    #   breed VARCHAR(100) NOT NULL,
+    #   age INT NOT NULL,
+    #   owner_id BIGINT NOT NULL,
+    #   is_stray BOOLEAN DEFAULT FALSE,
+    #   pet_picture VARCHAR(255),
+    #   adoption_status VARCHAR(20) DEFAULT 'not_for_adoption',
+    #   adopted_by_id BIGINT,
+    #   adoption_date DATETIME,
+    #   medical_history TEXT,
+    #   vaccinated BOOLEAN DEFAULT FALSE,
+    #   last_checkup DATE,
+    #   description TEXT,
+    #   special_needs TEXT,
+    #   created_at DATETIME NOT NULL,
+    #   updated_at DATETIME NOT NULL,
+    #   FOREIGN KEY (owner_id) REFERENCES user(id),
+    #   FOREIGN KEY (adopted_by_id) REFERENCES user(id)
+    # );
+
 
 class Business(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    rating = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(5)])
+    professional_type = models.CharField(max_length=20, choices=User.PROFESSIONAL_TYPES, null=True, blank=True)
+    business_type = models.CharField(max_length=20, choices=User.BUSINESS_TYPES, null=True, blank=True)
+    contact_number = models.CharField(max_length=15, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    address = models.CharField(max_length=255, null=True, blank=True)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    zip_code = models.CharField(max_length=10, null=True, blank=True)
+    description = models.TextField(blank=True, null=True)
+    rating = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(5)], default=0)
     logo = models.ImageField(upload_to='business_logos/', blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now) 
+    updated_at = models.DateTimeField(auto_now=True)
 
     def get_logo(self):
         if self.logo:
             return self.logo.url
         return '/static/core/images/default_business.png'
+    
+    def __str__(self):
+        return f"{self.name} - {self.user.username}"
+
+# CREATE TABLE business (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   user_id BIGINT NOT NULL UNIQUE,
+    #   name VARCHAR(100) NOT NULL,
+    #   professional_type VARCHAR(20),
+    #   business_type VARCHAR(20),
+    #   contact_number VARCHAR(15),
+    #   email VARCHAR(254),
+    #   address VARCHAR(255),
+    #   city VARCHAR(100),
+    #   zip_code VARCHAR(10),
+    #   description TEXT,
+    #   rating FLOAT DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
+    #   logo VARCHAR(255),
+    #   created_at DATETIME NOT NULL,
+    #   updated_at DATETIME NOT NULL,
+    #   FOREIGN KEY (user_id) REFERENCES user(id)
+    # );
 
 class ShelterClinic(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
+    facilities = models.TextField(blank=True, default='')
+    capacity = models.IntegerField(default=0)
+    emergency_service = models.BooleanField(default=False)
+    working_hours = models.TextField(blank=True, default='Monday-Friday: 9 AM - 5 PM')
     review = models.TextField(blank=True)
     facility_images = models.ManyToManyField('Image', blank=True, related_name='shelter_images')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.business.name}'s Shelter/Clinic"
+
+# CREATE TABLE shelter_clinic (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   business_id BIGINT NOT NULL UNIQUE,
+    #   phone VARCHAR(15) NOT NULL,
+    #   email VARCHAR(254) NOT NULL,
+    #   facilities TEXT,
+    #   capacity INT DEFAULT 0,
+    #   emergency_service BOOLEAN DEFAULT FALSE,
+    #   working_hours TEXT DEFAULT 'Monday-Friday: 9 AM - 5 PM',
+    #   review TEXT,
+    #   updated_at DATETIME NOT NULL,
+    #   FOREIGN KEY (business_id) REFERENCES business(id)
+    # );
+    #
+    # CREATE TABLE shelter_facility_images (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   shelter_id BIGINT NOT NULL,
+    #   image_id BIGINT NOT NULL,
+    #   FOREIGN KEY (shelter_id) REFERENCES shelter_clinic(id),
+    #   FOREIGN KEY (image_id) REFERENCES image(id)
+    # );    
 
 class PetSitterGroomer(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)
-    experience = models.IntegerField()  # in years
+    experience = models.IntegerField(default=0)  # in years
+    service_types = models.TextField(blank=True, default='')
+    service_area = models.CharField(max_length=255, blank=True)
+    availability = models.TextField(blank=True, default='Monday-Friday: 9 AM - 5 PM')
     contact = models.CharField(max_length=100)
-    rating = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(5)])
+    rating = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(5)], default=0)
+    house_calls = models.BooleanField(default=False)
     certificate_image = models.ImageField(upload_to='certificates/', blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.business.name}'s Pet Services"
+
+
+# CREATE TABLE pet_sitter_groomer (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   business_id BIGINT NOT NULL UNIQUE,
+    #   experience INT DEFAULT 0,
+    #   service_types TEXT DEFAULT '',
+    #   service_area VARCHAR(255) DEFAULT '',
+    #   availability TEXT DEFAULT 'Monday-Friday: 9 AM - 5 PM',
+    #   contact VARCHAR(100) NOT NULL,
+    #   rating FLOAT DEFAULT 0 CHECK (rating >= 0 AND rating <= 5),
+    #   house_calls BOOLEAN DEFAULT FALSE,
+    #   certificate_image VARCHAR(255),
+    #   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    #   FOREIGN KEY (business_id) REFERENCES business(id) ON DELETE CASCADE
+    # );
+
 
 class Shop(models.Model):
     business = models.OneToOneField(Business, on_delete=models.CASCADE)
-    product_name = models.CharField(max_length=100)
-    quantity = models.IntegerField()
-    status = models.CharField(max_length=20)
-    rating = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(5)])
+    product_name = models.CharField(max_length=100, default='Shop Products')
+    quantity = models.IntegerField(default=0)
+    status = models.CharField(max_length=20, default='active')
+    rating = models.FloatField(
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        default=0.0,  
+    )
+    business_hours = models.TextField(blank=True, null=True, default="Monday-Friday: 9 AM - 5 PM")
+    contact_info = models.CharField(max_length=100, blank=True, null=True)
     shop_image = models.ImageField(upload_to='shop_images/', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.business.name}'s Shop"
+    
+
+# CREATE TABLE shop (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   business_id BIGINT NOT NULL UNIQUE,
+    #   product_name VARCHAR(100) DEFAULT 'Shop Products',
+    #   quantity INT DEFAULT 0,
+    #   status VARCHAR(20) DEFAULT 'active',
+    #   rating FLOAT DEFAULT 0.0 CHECK (rating >= 0 AND rating <= 5),
+    #   business_hours TEXT DEFAULT 'Monday-Friday: 9 AM - 5 PM',
+    #   contact_info VARCHAR(100),
+    #   shop_image VARCHAR(255),
+    #   FOREIGN KEY (business_id) REFERENCES business(id) ON DELETE CASCADE
+    # );
+
 
 class Marketplace(models.Model):
     product_name = models.CharField(max_length=100)
@@ -183,7 +351,29 @@ class Marketplace(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     def __str__(self):
         return self.product_name
-    
+
+
+# CREATE TABLE marketplace (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   product_name VARCHAR(100) NOT NULL,
+    #   description TEXT NOT NULL,
+    #   price DECIMAL(10,2) NOT NULL,
+    #   status VARCHAR(20) NOT NULL,
+    #   seller_id BIGINT NOT NULL,
+    #   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    #   quantity INT UNSIGNED DEFAULT 1,
+    #   FOREIGN KEY (seller_id) REFERENCES user(id) ON DELETE CASCADE
+    # );
+    #
+# CREATE TABLE marketplace_product_images (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   marketplace_id BIGINT NOT NULL,
+    #   image_id BIGINT NOT NULL,
+    #   FOREIGN KEY (marketplace_id) REFERENCES marketplace(id) ON DELETE CASCADE,
+    #   FOREIGN KEY (image_id) REFERENCES image(id) ON DELETE CASCADE,
+    #   UNIQUE KEY unique_marketplace_image (marketplace_id, image_id)
+    # );
+
 class Order(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
@@ -198,6 +388,21 @@ class Order(models.Model):
     delivery_address = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+# CREATE TABLE order (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   buyer_id BIGINT NOT NULL,
+    #   product_id BIGINT NOT NULL,
+    #   quantity INT UNSIGNED NOT NULL,
+    #   contact_number VARCHAR(15) NOT NULL,
+    #   delivery_address TEXT NOT NULL,
+    #   status VARCHAR(20) DEFAULT 'pending',
+    #   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    #   FOREIGN KEY (buyer_id) REFERENCES user(id) ON DELETE CASCADE,
+    #   FOREIGN KEY (product_id) REFERENCES marketplace(id) ON DELETE CASCADE,
+    #   CONSTRAINT status_check CHECK (status IN ('pending', 'confirmed', 'cancelled'))
+    # );
 
 
 class Event(models.Model):
@@ -231,6 +436,27 @@ class Event(models.Model):
         super().save(*args, **kwargs)
 
 
+# CREATE TABLE event (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   title VARCHAR(200) NOT NULL,
+    #   date DATETIME NOT NULL,
+    #   location VARCHAR(255) NOT NULL,
+    #   details TEXT NOT NULL,
+    #   organizer_id BIGINT NOT NULL,
+    #   participant_names TEXT,
+    #   category VARCHAR(20) DEFAULT 'social',
+    #   FOREIGN KEY (organizer_id) REFERENCES user(id)
+    # );
+    #
+    # CREATE TABLE event_participants (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   event_id BIGINT NOT NULL,
+    #   user_id BIGINT NOT NULL,
+    #   FOREIGN KEY (event_id) REFERENCES event(id),
+    #   FOREIGN KEY (user_id) REFERENCES user(id)
+    # );
+
+
 class Fundraiser(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -259,6 +485,24 @@ class Fundraiser(models.Model):
             return 0
 
 
+# CREATE TABLE fundraiser (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   title VARCHAR(200) NOT NULL,
+    #   description TEXT,
+    #   target_amount DECIMAL(10,2) NOT NULL,
+    #   collected_amount DECIMAL(10,2) DEFAULT 0,
+    #   applicant_name VARCHAR(100) NOT NULL,
+    #   created_by_id BIGINT NOT NULL,
+    #   beneficiary_id BIGINT NOT NULL,
+    #   shelter_id BIGINT,
+    #   campaign_image VARCHAR(255),
+    #   donation_history TEXT DEFAULT '{}',
+    #   FOREIGN KEY (created_by_id) REFERENCES user(id),
+    #   FOREIGN KEY (beneficiary_id) REFERENCES pet(id),
+    #   FOREIGN KEY (shelter_id) REFERENCES shelter_clinic(id)
+    # );
+
+
 class Image(models.Model):
     image = models.ImageField(upload_to='images/')
     caption = models.CharField(max_length=200, blank=True)
@@ -280,18 +524,44 @@ class Post(models.Model):
     class Meta:
         ordering = ['-created_at']
 
+
+# CREATE TABLE post (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   user_id BIGINT NOT NULL,
+    #   content TEXT NOT NULL,
+    #   image VARCHAR(255),
+    #   created_at DATETIME NOT NULL,
+    #   updated_at DATETIME NOT NULL,
+    #   FOREIGN KEY (user_id) REFERENCES user(id)
+    # );
+    #
+    # CREATE TABLE post_likes (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   post_id BIGINT NOT NULL,
+    #   user_id BIGINT NOT NULL,
+    #   FOREIGN KEY (post_id) REFERENCES post(id),
+    #   FOREIGN KEY (user_id) REFERENCES user(id)
+    # );
+    #
+    # CREATE TABLE post_dislikes (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   post_id BIGINT NOT NULL,
+    #   user_id BIGINT NOT NULL,
+    #   FOREIGN KEY (post_id) REFERENCES post(id),
+    #   FOREIGN KEY (user_id) REFERENCES user(id)
+    # );
+
+
 class Service(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='services')
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.title}"
-
-    class Meta:
-        ordering = ['-created_at']
 
         
 class ProfessionalProfile(models.Model):
@@ -320,6 +590,20 @@ class Review(models.Model):
     class Meta:
         unique_together = ['reviewer', 'professional']
 
+
+# CREATE TABLE review (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   reviewer_id BIGINT NOT NULL,
+    #   professional_id BIGINT NOT NULL,
+    #   rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    #   review_text TEXT NOT NULL,
+    #   created_at DATETIME NOT NULL,
+    #   FOREIGN KEY (reviewer_id) REFERENCES user(id),
+    #   FOREIGN KEY (professional_id) REFERENCES user(id),
+    #   UNIQUE KEY unique_review (reviewer_id, professional_id)
+    # );
+
+
 class AdoptionRequest(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
@@ -339,3 +623,16 @@ class AdoptionRequest(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+# CREATE TABLE adoption_request (
+    #   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    #   pet_id BIGINT NOT NULL,
+    #   requestor_id BIGINT NOT NULL,
+    #   contact_number VARCHAR(15) NOT NULL,
+    #   message TEXT NOT NULL,
+    #   status VARCHAR(20) DEFAULT 'pending',
+    #   created_at DATETIME NOT NULL,
+    #   FOREIGN KEY (pet_id) REFERENCES pet(id),
+    #   FOREIGN KEY (requestor_id) REFERENCES user(id)
+    # );
