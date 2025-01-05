@@ -267,6 +267,15 @@ def edit_pet(request, pet_id):
             messages.success(request, 'Pet information updated successfully!')
     return redirect('pets')
 
+
+# SELECT * 
+# FROM pets 
+# WHERE id = {pet_id} AND owner_id = {user_id};
+# UPDATE pets
+# SET name = '{name}', age = {age}, type = '{type}'
+# WHERE id = {pet_id} AND owner_id = {user_id};
+
+
 @login_required
 def fundraiser_list(request):
     fundraisers = Fundraiser.objects.all().order_by('-id')
@@ -500,7 +509,8 @@ def event_list(request):
 def home(request):
     # Show all posts
     posts = Post.objects.all().order_by('-created_at')
-    adoptable_pets = Pet.objects.filter(adoption_status='available').order_by('-id')[:5]
+    # MySQL: SELECT * FROM posts ORDER BY created_at DESC;
+    adoptable_pets = Pet.objects.filter(adoption_status='available').order_by('-id')[:5]         # MySQL: SELECT * FROM pets WHERE adoption_status = 'available' ORDER BY id DESC LIMIT 5;
     if request.method == 'POST':
         form = PostForm(request.POST, request.FILES)
         if form.is_valid():
@@ -520,7 +530,7 @@ def home(request):
     
     # Add services if user is a groomer/sitter
     if hasattr(request.user, 'professional_type') and request.user.professional_type == 'business' and request.user.business_type == 'groomer':
-        services = Service.objects.filter(user=request.user)
+        services = Service.objects.filter(user=request.user)        # MySQL: SELECT * FROM services WHERE user_id = [current_user_id];
         service_form = ServiceForm()
         context.update({
             'services': services,
@@ -533,13 +543,13 @@ def home(request):
 
 @login_required
 def like_post(request, post_id):
-    post = get_object_or_404(Post, id=post_id)
+    post = get_object_or_404(Post, id=post_id)          # MySQL: SELECT * FROM posts WHERE id = [post_id] LIMIT 1;
     if request.user in post.dislikes.all():
-        post.dislikes.remove(request.user)
+        post.dislikes.remove(request.user)              # MySQL: DELETE FROM post_dislikes WHERE post_id = [post_id] AND user_id = [user_id];
     if request.user in post.likes.all():
         post.likes.remove(request.user)
     else:
-        post.likes.add(request.user)
+        post.likes.add(request.user)                    # MySQL: INSERT INTO post_likes (post_id, user_id) VALUES ([post_id], [user_id]);
     return redirect('home')
 
 @login_required
@@ -588,6 +598,10 @@ def search_users(request):
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query)
         )
+        # MySQL: SELECT * FROM users 
+        #        WHERE username LIKE '%[query]%'
+        #        OR first_name LIKE '%[query]%'
+        #        OR last_name LIKE '%[query]%';
     else:
         users = []
     
@@ -598,8 +612,8 @@ def search_users(request):
 
 @login_required
 def user_posts(request, user_id):
-    profile_user = get_object_or_404(User, id=user_id)
-    posts = Post.objects.filter(user=profile_user).order_by('-created_at')
+    profile_user = get_object_or_404(User, id=user_id)          # MySQL: SELECT * FROM users WHERE id = [user_id] LIMIT 1;
+    posts = Post.objects.filter(user=profile_user).order_by('-created_at')          # MySQL: SELECT * FROM posts WHERE user_id = [user_id] ORDER BY created_at DESC;
     
     context = {
         'profile_user': profile_user,
@@ -616,7 +630,10 @@ def user_posts(request, user_id):
                 'total_ratings': 0
             }
         )
-        
+        # MySQL: INSERT INTO professional_profiles 
+    #        (user_id, description, average_rating, total_ratings)
+    #        VALUES ([user_id], '', 0.0, 0)
+    #        ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id);
         reviews = Review.objects.filter(professional=profile_user).order_by('-created_at')
         
         # Get services for groomer/shelter
@@ -656,11 +673,20 @@ def add_service(request):
         service.save()
         messages.success(request, 'Service added successfully!')
     return redirect('user_posts', user_id=request.user.id)
-
+# MySQL: INSERT INTO services 
+        #        (user_id, title, description, price, created_at, updated_at)
+        #        VALUES (
+        #            [user_id],
+        #            [title],
+        #            [description],
+        #            [price],
+        #            CURRENT_TIMESTAMP,
+        #            CURRENT_TIMESTAMP
+        #        );
 
 @login_required
 def create_order(request, listing_id):
-    listing = get_object_or_404(Marketplace, id=listing_id)
+    listing = get_object_or_404(Marketplace, id=listing_id)     # MySQL: SELECT * FROM marketplace WHERE id = [listing_id] LIMIT 1;     
     if request.method == 'POST':
         form = OrderForm(request.POST)
         if form.is_valid():
@@ -674,7 +700,9 @@ def create_order(request, listing_id):
                 # Decrease product quantity
                 listing.quantity -= quantity
                 listing.save()
-                
+                # MySQL: UPDATE marketplace 
+    #        SET quantity = quantity - [quantity] 
+    #        WHERE id = [listing_id];
                 messages.success(request, 'Order placed successfully!')
                 return redirect('marketplace')
             else:
@@ -720,10 +748,13 @@ def create_order(request, listing_id):
 @login_required
 def my_orders(request):
     # For buyers
-    orders = Order.objects.filter(buyer=request.user).order_by('-created_at')
+    orders = Order.objects.filter(buyer=request.user).order_by('-created_at')           # MySQL: SELECT * FROM orders WHERE buyer_id = [user_id] ORDER BY created_at DESC;
     # For sellers
     seller_orders = Order.objects.filter(product__seller=request.user).order_by('-created_at')
-    
+    # MySQL: SELECT o.* FROM orders o
+    #        JOIN marketplace m ON o.product_id = m.id
+    #        WHERE m.seller_id = [user_id]
+    #        ORDER BY o.created_at DESC;
     return render(request, 'core/my_orders.html', {
         'buyer_orders': orders,
         'seller_orders': seller_orders
@@ -732,9 +763,15 @@ def my_orders(request):
 @login_required
 def professional_dashboard(request, username):
     professional = get_object_or_404(User, username=username, account_type='professional')
+    # MySQL: SELECT * FROM users 
+    #        WHERE username = [username] 
+    #        AND account_type = 'professional' 
+    #        LIMIT 1;
     profile, created = ProfessionalProfile.objects.get_or_create(user=professional)
     reviews = Review.objects.filter(professional=professional).order_by('-created_at')
-    
+    # MySQL: SELECT * FROM reviews 
+    #        WHERE professional_id = [professional_id] 
+    #        ORDER BY created_at DESC;
     if request.user == professional:
         if request.method == 'POST':
             form = ProfessionalProfileForm(
@@ -803,6 +840,11 @@ def delete_service(request, service_id):
     service.delete()
     messages.success(request, 'Service deleted successfully!')
     return redirect('user_posts', user_id=request.user.id)
+
+# MySQL: DELETE FROM services 
+    #        WHERE id = [service_id] 
+    #        AND user_id = [user_id];
+
 
 @login_required
 def delete_fundraiser(request, fundraiser_id):
@@ -898,6 +940,18 @@ def delete_post(request, post_id):
     except Post.DoesNotExist:
         messages.error(request, 'Post not found or you do not have permission to delete it.')
     return redirect('home')
+
+
+# 1. First, check if post exists and belongs to user
+# SELECT * FROM post 
+# WHERE id = [post_id] 
+# AND user_id = [request.user.id] 
+# LIMIT 1;
+
+# -- 2. If post is found, delete it
+# DELETE FROM post 
+# WHERE id = [post_id] 
+# AND user_id = [request.user.id];
 
 @login_required
 def profile_public(request, username):
