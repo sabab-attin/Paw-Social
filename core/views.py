@@ -683,6 +683,7 @@ def add_service(request):
         #            CURRENT_TIMESTAMP,
         #            CURRENT_TIMESTAMP
         #        );
+        #
 
 @login_required
 def create_order(request, listing_id):
